@@ -31,6 +31,7 @@ class Interpreter:
       self.advance()
   
   def integer(self):
+    # Returns a multidigit integer consumed from input
     result = ''
     while self.current_char is not None and self.current_char.isdigit():
       result += self.current_char
@@ -65,26 +66,28 @@ class Interpreter:
       self.current_token = self.get_next_token()
     else:
       self.error()
-    
+
+  def term(self):
+    # Returns an INTEGER token value
+    token = self.current_token
+    self.eat('INTEGER')
+    return token.value
+
   def expr(self):
+    # Arithmetic expression parser / interpreter
     self.current_token = self.get_next_token()
-    left = self.current_token
-    self.eat('INTEGER')
-
-    op = self.current_token
-    if op._type == 'PLUS':
-      self.eat('PLUS')
-    else:
-      self.eat('MINUS')
-
-    right = self.current_token
-    self.eat('INTEGER')
-
-    if op._type == 'PLUS':
-      result = left.value + right.value
-    else:
-      result = left.value - right.value
+    result = self.term()
+    while self.current_token._type in ('PLUS','MINUS'):
+      token = self.current_token
+      if token._type == 'PLUS':
+        self.eat('PLUS')
+        result = result + self.term()
+      elif token._type == 'MINUS':
+        self.eat('MINUS')
+        result = result -  self.term()
+  
     return result
+
 
 if __name__ == "__main__":
   while True:
