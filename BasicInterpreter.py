@@ -17,7 +17,7 @@ class Interpreter:
     self.current_char = self.text[self.pos]
 
   def error(self):
-    raise Exception('Error parsing input')
+    raise Exception('Invalid Syntax')
 
   def advance(self):
     self.pos += 1
@@ -55,7 +55,15 @@ class Interpreter:
 
       if self.current_char ==  '-':
         self.advance()
-        return  Token('MINUS','-')      
+        return  Token('MINUS','-')  
+
+      if self.current_char == '*':
+        self.advance()
+        return Token('MUL','*')
+
+      if self.current_char == '/':
+        self.advance()
+        return Token('DIV','/')    
     
       self.error() # If the token is not any of the recognized one , raise an error
 
@@ -77,7 +85,7 @@ class Interpreter:
     # Arithmetic expression parser / interpreter
     self.current_token = self.get_next_token()
     result = self.term()
-    while self.current_token._type in ('PLUS','MINUS'):
+    while self.current_token._type in ('PLUS','MINUS','MUL','DIV'):
       token = self.current_token
       if token._type == 'PLUS':
         self.eat('PLUS')
@@ -85,6 +93,12 @@ class Interpreter:
       elif token._type == 'MINUS':
         self.eat('MINUS')
         result = result -  self.term()
+      elif token._type == 'MUL':
+        self.eat('MUL')
+        result = result *  self.term()
+      elif token._type == 'DIV':
+        self.eat('DIV')
+        result = result /  self.term()
   
     return result
 
