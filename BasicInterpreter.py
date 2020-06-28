@@ -76,7 +76,21 @@ class Lexer:
 
     return Token('EOF',None)
 
-class Interpreter:
+class AST:
+  pass
+
+class BinOp(AST):
+  # Binary operators operate on 2 operands
+  def __init__(self, left, op, right):
+    self.left = left
+    self.token = self.op = op
+    self.right = right
+  
+class Num(AST):
+  def __init__(self, token):
+    self.token = token
+    self.value= token.value
+class Parser:
   def __init__(self, lexer):
     self.lexer = lexer
     self.current_token = self.lexer.get_next_token()
@@ -95,43 +109,82 @@ class Interpreter:
     token = self.current_token
     if token._type == 'INTEGER':
       self.eat('INTEGER')
-      return token.value
+      return Num(token)
     elif token._type == 'LPAREN':
       self.eat('LPAREN')
-      result = self.expr()
+      node = self.expr()
       self.eat('RPAREN')
-      return result
+      return node
   
   def term(self):
     # handles term part of grammar term: factor( (MUL | DIV ) factor)
-    result = self.factor()
+    node = self.factor()
     while self.current_token._type in ('MUL', 'DIV'):
       token = self.current_token
       if token._type == 'MUL':
         self.eat('MUL')
-        result = result * self.factor()
       elif token._type == 'DIV':
         self.eat('DIV')
-        result = result / self.factor()
-    return result 
+    
+      node = BinOp(left=node, op=token, right=self.factor())
+    return node
 
   def expr(self):
-    # Arithmetic expression parser / interpreter
+    # Arithmetic expression parser + interpreter
     # Current grammar supported by the parser
     # expr : term((PLUS | MINUS )term )*  * -> any number of arguments 
     # term : factor ((MUL | DIV ) factor)*
     # factor : INTEGER | LPAREN expr RPAREN
-    result = self.term()
+
+    # each BinOp node adopts the current value of the node variable as its
+    # left child and the result of a call to a term or factor as its right child, 
+    # so it’s effectively pushing down nodes to the left
+    node = self.term()
     while self.current_token._type in ('PLUS','MINUS'):
       token = self.current_token
       if token._type == 'PLUS':
         self.eat('PLUS')
-        result = result + self.term()
       elif token._type == 'MINUS':
         self.eat('MINUS')
-        result = result -  self.term()
-    return result
 
+      node = BinOp(left=node, op=token, right=self.term())
+    
+    return node
+  
+  def parse(self):
+    return self.expr()
+
+
+class NodeVisitor:
+  # Interpreter
+  def visit(self, node):
+    method_name = 'visit_'+type(node).__name__
+    visitor = getattr(self,method_name, self.generic_visit)
+    return visitor(node)
+  
+  def generic_visit(self, node):
+    raise Exception(f"No visit_{type(node).__name__}")
+
+class Interpreter(NodeVisitor):
+  def __init__(self, parser):
+    self.parser = parser
+  
+  def visit_Binop(self, node):
+    if node.op.type == 'PLUS':
+      return self.visit(node.left) + self.visit(node.right)
+    elif node.op.type == 'MINUS':
+      return self.visit(node.left) - self.visit(node.right)
+    elif node.op.type == 'MUL':
+      return self.visit(node.left) * self.visit(node.right)
+    elif node.op.type == 'DIV':
+      return self.visit(node.left) / self.visit(node.right)
+  
+  def visit_Num(self, node):
+    return node.value
+
+  def interpret(self):
+    tree = self.parse.parser
+    return self.visit(tree)
 
 if __name__ == "__main__":
   while True:
