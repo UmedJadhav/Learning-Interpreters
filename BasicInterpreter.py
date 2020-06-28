@@ -64,6 +64,14 @@ class Lexer:
         self.advance()
         return Token('DIV','/')    
     
+      if self.current_char == '(' :
+        self.advance()
+        return Token('LPAREN','(')
+
+      if self.current_char == ')' :
+        self.advance()
+        return Token('RPAREN',')')
+
       self.error() # If the token is not any of the recognized one , raise an error
 
     return Token('EOF',None)
@@ -85,8 +93,14 @@ class Interpreter:
   def factor(self):
     # factor : INTEGER '
     token = self.current_token
-    self.eat('INTEGER')
-    return token.value
+    if token._type == 'INTEGER':
+      self.eat('INTEGER')
+      return token.value
+    elif token._type == 'LPAREN':
+      self.eat('LPAREN')
+      result = self.expr()
+      self.eat('RPAREN')
+      return result
   
   def term(self):
     # handles term part of grammar term: factor( (MUL | DIV ) factor)
@@ -103,10 +117,10 @@ class Interpreter:
 
   def expr(self):
     # Arithmetic expression parser / interpreter
-    # Parser Grammar with the precedence rule 
+    # Current grammar supported by the parser
     # expr : term((PLUS | MINUS )term )*  * -> any number of arguments 
     # term : factor ((MUL | DIV ) factor)*
-    # factor : INTEGER
+    # factor : INTEGER | LPAREN expr RPAREN
     result = self.term()
     while self.current_token._type in ('PLUS','MINUS'):
       token = self.current_token
