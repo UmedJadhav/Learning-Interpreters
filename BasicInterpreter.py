@@ -144,6 +144,36 @@ class Num(AST):
   def __str__(self):
     return f"Num : {self.token} {self.value}"
 
+class Compound(AST):
+  # Represents a BEGIN..END block
+  def __init__(self):
+    self.children = []
+  
+  def __str__(self):
+    return f"Compound: {self.children}"
+
+class Assign(AST):
+  def __init__(self, left, op, right):
+    self.left = left
+    self.token = self.op = op
+    self.right = right
+
+  def __str__(self):
+    returnf"Assign: {self.left} {self.token} {self.right}"
+
+class Var(AST):
+  # Var is build from ID token
+  def __init__(self):
+    self.token = token
+    self.value = token.value
+  
+  def __str__(self):
+    return f"Var: {self.token} {self.value}"
+
+class NoOp(AST):
+  # Used to represent empty statement
+  pass
+
 class Parser:
   def __init__(self, lexer):
     self.lexer = lexer
@@ -157,9 +187,68 @@ class Parser:
       self.current_token = self.lexer.get_next_token()
     else:
       self.error()
+  
+  def program(self):
+    # program : compound_statement DOT
+    node = self.compound_statement()
+    self.eat('DOT')
+    return node
+  
+  def compound_statement(self):
+    # compound_statement : BEGIN statement_list END
+    self.eat('BEGIN')
+    nodes = self.statement_list()
+    self.eat('END')
+    root = Compound()
+    for node in nodes:
+      root.children.append(node)
+    
+    return root
+  
+  def statement_list(self):
+    # statement_list : statement | statement SEMI statement_list
+    node = self.statement()
+    results = [node]
+
+    while self.current_token._type == 'SEMI':
+      self.eat('SEMI')
+      results.append(self.statement())
+    
+    if self.current_token._type == 'ID':
+      self.error()
+    
+    return results
+
+  def statement(self):
+    # statement : compound_statement | assignment_statement | empty
+    if self.current_token._type == 'BEGIN':
+      node = self.compound_statement()
+    elif self.current_token._type == 'ID':
+      node = self.assignment_statement()
+    else:
+      node = self.empty()
+    return node
+
+  def assignment_statement(self):
+    # assignment_statement : variable ASSIGN expr
+    left = self.variable()
+    token = self.current_token
+    self.eat('ASSIGN')
+    right = self.expr()
+    node = Assign(left, token, right)
+    return node
+  
+  def variable(self):
+    # variable: ID
+    node = Var(self.current_token)
+    self.eat('ID')
+    return node
+  
+  def empty(self):
+    return NoOp()
 
   def factor(self):
-    # factor : (PLUS|MINUS) factor  | INTEGER | LPAREN expr RPAREN 
+    # factor : PLUS factor | MINUS factor  | INTEGER | LPAREN expr RPAREN | variable 
     token = self.current_token
     if token._type == 'PLUS':
       self.eat('PLUS')
@@ -176,6 +265,9 @@ class Parser:
       self.eat('LPAREN')
       node = self.expr()
       self.eat('RPAREN')
+      return node
+    else:
+      node = self.variable()
       return node
   
   def term(self):
@@ -214,7 +306,10 @@ class Parser:
     return node
   
   def parse(self):
-    return self.expr()
+    node = self.program()
+    if self.current_token._type != 'EOF':
+      self.error()
+    return node
 
 
 class NodeVisitor:
