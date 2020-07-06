@@ -88,7 +88,14 @@ class BinOp(AST):
   
   def __str__(self):
     return f"BinOp : {self.left} {self.token} {self.right}"
+
+class UnaryOp(AST):
+  def __init__(self, op, expr):
+    self.token = self.op = op
+    self.expr = expr
   
+  def __str__(self):
+    return f"Unary : {self.token} {self.expr}"
 class Num(AST):
   def __init__(self, token):
     self.token = token
@@ -112,9 +119,17 @@ class Parser:
       self.error()
 
   def factor(self):
-    # factor : INTEGER | LPAREN expr RPAREN
+    # factor : (PLUS|MINUS) factor  | INTEGER | LPAREN expr RPAREN 
     token = self.current_token
-    if token._type == 'INTEGER':
+    if token._type == 'PLUS':
+      self.eat('PLUS')
+      node = UnaryOp(token, self.factor())
+      return node
+    elif token._type == 'MINUS':
+      self.eat('MINUS')
+      node = UnaryOp(token, self.factor())
+      return node
+    elif token._type == 'INTEGER':
       self.eat('INTEGER')
       return Num(token)
     elif token._type == 'LPAREN':
@@ -186,6 +201,13 @@ class Interpreter(NodeVisitor):
     elif node.op._type == 'DIV':
       return self.visit(node.left) / self.visit(node.right)
   
+  def visit_UnaryOp(self, node):
+    op = node.op._type
+    if op == 'PLUS':
+      return +self.visit(node.expr)
+    elif op == 'MINUS':
+      return -self.visit(node.expr)
+
   def visit_Num(self, node):
     return node.value
 
