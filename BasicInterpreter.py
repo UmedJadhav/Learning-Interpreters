@@ -16,12 +16,12 @@ class Lexer:
     self.current_char = self.text[self.pos]
 
   def error(self):
-    raise Exception('Invalid Syntax')
+    raise Exception('Invalid Character')
 
   def advance(self):
     self.pos += 1
     if self.pos > len(self.text) - 1:
-      self.current_char = None
+      self.current_char = None # Indicates the end of input
     else:
       self.current_char = self.text[self.pos]
 
@@ -86,10 +86,17 @@ class BinOp(AST):
     self.token = self.op = op
     self.right = right
   
+  def __str__(self):
+    return f"BinOp : {self.left} {self.token} {self.right}"
+  
 class Num(AST):
   def __init__(self, token):
     self.token = token
     self.value= token.value
+  
+  def __str__(self):
+    return f"Num : {self.token} {self.value}"
+
 class Parser:
   def __init__(self, lexer):
     self.lexer = lexer
@@ -105,7 +112,7 @@ class Parser:
       self.error()
 
   def factor(self):
-    # factor : INTEGER '
+    # factor : INTEGER | LPAREN expr RPAREN
     token = self.current_token
     if token._type == 'INTEGER':
       self.eat('INTEGER')
@@ -156,7 +163,7 @@ class Parser:
 
 
 class NodeVisitor:
-  # Interpreter
+  # Visitor Pattern Implementation
   def visit(self, node):
     method_name = 'visit_'+type(node).__name__
     visitor = getattr(self,method_name, self.generic_visit)
@@ -169,21 +176,21 @@ class Interpreter(NodeVisitor):
   def __init__(self, parser):
     self.parser = parser
   
-  def visit_Binop(self, node):
-    if node.op.type == 'PLUS':
+  def visit_BinOp(self, node):
+    if node.op._type == 'PLUS':
       return self.visit(node.left) + self.visit(node.right)
-    elif node.op.type == 'MINUS':
+    elif node.op._type == 'MINUS':
       return self.visit(node.left) - self.visit(node.right)
-    elif node.op.type == 'MUL':
+    elif node.op._type == 'MUL':
       return self.visit(node.left) * self.visit(node.right)
-    elif node.op.type == 'DIV':
+    elif node.op._type == 'DIV':
       return self.visit(node.left) / self.visit(node.right)
   
   def visit_Num(self, node):
     return node.value
 
   def interpret(self):
-    tree = self.parse.parser
+    tree = self.parser.parse()
     return self.visit(tree)
 
 if __name__ == "__main__":
@@ -195,6 +202,7 @@ if __name__ == "__main__":
     if not text:
       continue
     lexer = Lexer(text)
-    interpreter = Interpreter(lexer)
-    result = interpreter.expr()
+    parser=Parser(lexer)
+    interpreter = Interpreter(parser)
+    result = interpreter.interpret()
     print(result)
