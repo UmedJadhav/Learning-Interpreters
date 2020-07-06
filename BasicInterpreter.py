@@ -1,3 +1,4 @@
+
 class Token:
   def __init__(self, _type, value):
     self._type = _type
@@ -9,6 +10,11 @@ class Token:
   def __repr__(self):
     return self.__str__()
 
+RESERVED_KEYWORDS = {
+  'BEGIN' : Token('BEGIN','BEGIN'),
+  'END': Token('END','END')
+}
+
 class Lexer:
   def __init__(self, text):
     self.text = text
@@ -17,6 +23,24 @@ class Lexer:
 
   def error(self):
     raise Exception('Invalid Character')
+
+  def _id(self):
+    # Used to handle variable_names and reserved Keywords
+    result = ''
+    while self.current_char is not None and self.current_char.isalnum():
+      result += self.current_char
+      self.advance()
+    
+    token = RESERVED_KEYWORDS.get(result, Token('ID', result))
+    return token
+
+  def peek(self):
+    # Used to peek ahead to determine distinguish bw symbols like `:` amd `:=` etc
+    peek_pos = self.pos + 1
+    if peek_pos > len(self.text) - 1:
+      return None
+    else:
+      return self.text[peek_pos]
 
   def advance(self):
     self.pos += 1
@@ -71,6 +95,22 @@ class Lexer:
       if self.current_char == ')' :
         self.advance()
         return Token('RPAREN',')')
+      
+      if self.current_char.isalpha():
+        return self._id()
+      
+      if self.current_char == ':' and self.peek() == '=':
+        self.advance()
+        self.advance()
+        return Token('ASSIGN', ':=')
+      
+      if self.current_char == ';':
+        self.advance()
+        return Token('SEMI', ';')
+      
+      if self.current_char == '.':
+        self.advance()
+        return Token('DOT', '.')
 
       self.error() # If the token is not any of the recognized one , raise an error
 
