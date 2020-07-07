@@ -159,11 +159,11 @@ class Assign(AST):
     self.right = right
 
   def __str__(self):
-    returnf"Assign: {self.left} {self.token} {self.right}"
+    return f"Assign: {self.left} {self.token} {self.right}"
 
 class Var(AST):
   # Var is build from ID token
-  def __init__(self):
+  def __init__(self, token):
     self.token = token
     self.value = token.value
   
@@ -323,6 +323,7 @@ class NodeVisitor:
     raise Exception(f"No visit_{type(node).__name__}")
 
 class Interpreter(NodeVisitor):
+  GLOBAL_SCOPE = {}
   def __init__(self, parser):
     self.parser = parser
   
@@ -352,7 +353,7 @@ class Interpreter(NodeVisitor):
 
   def visit_Assign(self, node):
     # GLOBAL_SCOPE is a symbol table cum Memory space
-    var_name = self.left.value
+    var_name = node.left.value
     self.GLOBAL_SCOPE[var_name] = self.visit(node.right)
   
   def visit_Var(self, node):
@@ -371,15 +372,17 @@ class Interpreter(NodeVisitor):
     return self.visit(tree)
 
 if __name__ == "__main__":
-  while True:
-    try :
-      text = input('calc>')
-    except EOFError:
-      break
-    if not text:
-      continue
+  # while True:
+  #   try :
+  #     text = input('calc>')
+  #   except EOFError:
+  #     break
+  #   if not text:
+  #     continue
+    import sys
+    text = open(sys.argv[1], 'r').read()
     lexer = Lexer(text)
     parser=Parser(lexer)
     interpreter = Interpreter(parser)
     result = interpreter.interpret()
-    print(result)
+    print(interpreter.GLOBAL_SCOPE)
