@@ -57,6 +57,31 @@ class Lexer:
     
     token = RESERVED_KEYWORDS.get(result, Token('ID', result))
     return token
+  
+  def skip_comment(self):
+    while self.currrent_char != '}':
+      self.advance()
+    self.advance() # To eat up the closing brace
+  
+  def number(self):
+    # Returns a multidigit integer or float consumed from the input
+    result = ''
+    while self.current_char is not None and self.current_char.isdigit():
+      result += self.current_char
+      self.advance()
+    
+    if self.current_char == '.':
+      result += self.current_char
+      self.advance()
+
+      while (self.current_char is not None and self.current_char.isdigit())
+        result += self.current_char
+        self.advance()
+      token = Token('REAL_CONST', float(result))
+    else:
+      token = Token('INTEGER_CONST', int(result))
+    
+    return token
 
   def peek(self):
     # Used to peek ahead to determine distinguish bw symbols like `:` amd `:=` etc
@@ -135,6 +160,26 @@ class Lexer:
       if self.current_char == '.':
         self.advance()
         return Token('DOT', '.')
+      
+      if self.current_char == '{' :
+        self.advance()
+        self.skip_comment()
+        continue
+      
+      if self.current_char.is_digit():
+        return self.number()
+      
+      if self.current_char == ':':
+        self.advance()
+        return Token('COLON', ':')
+      
+      if self.current_char == ',':
+        self.advance()
+        return Token('COMMA', ',')
+      
+      if self.current_char == '/':
+        self.advance()
+        return Token('FLOAT_DIV', '/')
 
       self.error() # If the token is not any of the recognized one , raise an error
 
