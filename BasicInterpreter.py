@@ -1,3 +1,31 @@
+'''
+  Language Grammar :
+  ---------------------
+  program : PROGRAM variable SEMI block DOT
+  block: declaration compund_statements
+  declarations: VAR(variable_decalration SEMI)+ | empty
+  variable_declaration: ID(COMMA ID)* COLON type_spec
+  type_spec : INTEGER |  REAL
+  compound_statement : BEGIN statement_list END
+  statement_list : statement | statement SEMI statement_list
+  statement : compund_statement | assignment_statement | empty
+  assignment_statement : variable ASSIGN expr
+  empty:
+  expr : term((PLUS | MINUS) term)*
+  term : factor((MUL | INTEGER_DIV | FLOAT_DIV) factor)*
+  factor : PLUS factor | MINUS factor | INTEGER_CONST | REAL_CONST | LPAREN expr RPAREN | variable
+  variable : ID
+'''
+
+RESERVED_KEYWORDS = {
+  'BEGIN' : Token('BEGIN','BEGIN'),
+  'END': Token('END','END'),
+  'PROGRAM': Token('PROGRAM', 'PROGRAM'),
+  'VAR' : Token('VAR', 'VAR')
+  'DIV': Token('INTEGER_DIV', 'DIV')
+  'INTEGER': Token('INTEGER', 'INTEGER'),
+  'REAL': Token('REAL', 'REAL'),
+}
 
 class Token:
   def __init__(self, _type, value):
@@ -10,10 +38,6 @@ class Token:
   def __repr__(self):
     return self.__str__()
 
-RESERVED_KEYWORDS = {
-  'BEGIN' : Token('BEGIN','BEGIN'),
-  'END': Token('END','END')
-}
 
 class Lexer:
   def __init__(self, text):
