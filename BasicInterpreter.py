@@ -16,7 +16,7 @@
   factor : PLUS factor | MINUS factor | INTEGER_CONST | REAL_CONST | LPAREN expr RPAREN | variable
   variable : ID
 '''
-
+from collections import OrderedDict
 
 class Token:
   def __init__(self, _type, value):
@@ -66,7 +66,12 @@ class VarSymbol(Symbol):
 
 class SymbolTable:
   def __init__(self):
-    self._symbols = {}
+    self._symbols = OrderedDict()
+    self.__init_buildins()
+  
+  def __init_buildins(self):
+    self.define(BuildinTypeSymbol('INTEGER'))
+    self.define(BuildinTypeSymbol('REAL'))
   
   def __str__(self):
     s = f'Symbols: {[value for value in self._symbols.values()]}'
@@ -500,6 +505,58 @@ class NodeVisitor:
   
   def generic_visit(self, node):
     raise Exception(f"No visit_{type(node).__name__}")
+
+class SymbolTableBuilder(NodeVisitor):
+  def __init__(self):
+    self.symtab = SymbolTable()
+
+  def visit_Program(self, node):
+    self.visit(node.block)
+  
+  def visit_Block(self, node):
+    for declaration in node.declarations:
+      self.visit(declaration)
+    self.visit(node.compound_statement)
+
+  def visit_BinOp(self, node):
+    self.visit(node.left)
+    self.visit(node.right)
+  
+  def visit_Num(self, node):
+    pass
+
+  def visit_UnaryOp(self, node):
+    self.visit(node.expr)
+  
+  def visit_Compound(self, node):
+    for child in node.children:
+      self.visit(child)
+  
+  def visit_NoOp(self, node):
+    pass
+
+  def visit_VarDecl(self, node):
+    # First look up the build-in symbol . If it exists , then create a VarSymbol and store in symtable
+    type_name = node.type_node.value
+    type_symbol = self.symtab.lookup(type_name)
+    var_name = node.var_node.value
+    var_symbol = VarSymbol(var_name, type_symbol)
+    self.symtab.define(var_symbol)
+  
+  def visit_Assign(self, node):
+    var_name = node.left.value
+    var_symbol = self.symtab.lookup(var_name)
+    if var_symbol is None:
+      raise NameError(repr(var_name))
+    
+    self.visit(node.right)
+  
+  def visit_Var(self, node):
+    var_name = node.value
+    var_symbol = self.symtab.lookup(var_name)
+
+    if var_symvol is None:
+      raise NameError(repr(var_name))
 
 class Interpreter(NodeVisitor):
 
