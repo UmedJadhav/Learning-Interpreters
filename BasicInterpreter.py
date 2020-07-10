@@ -188,6 +188,26 @@ class Lexer:
 class AST:
   pass
 
+class Program(AST):
+  def __init__(self, name, block):
+    self.name = name
+    self.block = block
+
+class Block(AST:
+  def __init__(self, declarations , compound_statement):
+    self.declarations = declarations
+    self.compound_statement = compound_statement
+
+class VarDecl(AST):
+  def __init__(self, var_node, type_node):
+    self.var_node = var_node
+    self.type_node = type_node
+
+class Type(AST):
+  def __init__(self, token):
+    self.token = token
+    self.value = self.token.value
+
 class BinOp(AST):
   # Binary operators operate on 2 operands
   def __init__(self, left, op, right):
@@ -258,9 +278,57 @@ class Parser:
       self.error()
   
   def program(self):
-    # program : compound_statement DOT
-    node = self.compound_statement()
+    # program : PROGRAM variable SEMI block DOT
+    self.eat('PROGRAM')
+    var_node = self.variable()
+    prog_name = var_node.value
+    self.eat('SEMI')
+    block_node = self.block()
+    program_node = Program(prog_name, block_node)
     self.eat('DOT')
+    return program_node
+  
+  def block(self):
+    # block : declarations compound_statement
+    declaration_node = self.declarations()
+    compound_statement_node = self.compound_statement()
+    node = Block(declaration_node, compound_statement_node)
+    return node
+  
+  def declarations(self):
+    # declarations: VAR(variable_decalration SEMI)+ | empty
+    declarations = []
+    if self.current_token._type == 'VAR':
+      self.eat('VAR')
+      while self.current_token._type == 'ID':
+        var_decl = self.variable_declaration()
+        declarations.extend(var_decl)
+        self.eat('SEMI')
+    return declarations
+  
+  def variable_declaration(self):
+    # variable_declaration: ID(COMMA ID)* COLON type_spec
+    var_nodes = [Var(self.current_token)]
+    self.eat('ID')
+    while self.current_token__type == 'COMMA':
+      self.eat('COMMA')
+      var_nodes.append(Var(self.current_token))
+      self.eat('ID')
+    
+    self.eat('COLON')
+    type_node = self.type_spec()
+    var_declarations = [ VarDecl(var_node, type_node) for var_node in var_nodes ]
+    return var_declarations
+  
+  def type_spec(self):
+    # type_spec : INTEGER |  REAL
+    token = self.current_token
+    if self.current_token._type == 'INTEGER':
+      self.eat('INTEGER')
+    else:
+      self.eat('REAL')
+    
+    node = Type(token)
     return node
   
   def compound_statement(self):
@@ -317,7 +385,8 @@ class Parser:
     return NoOp()
 
   def factor(self):
-    # factor : PLUS factor | MINUS factor  | INTEGER | LPAREN expr RPAREN | variable 
+    # factor : PLUS factor | MINUS factor | INTEGER_CONST | REAL_CONST | LPAREN expr RPAREN | variable
+    
     token = self.current_token
     if token._type == 'PLUS':
       self.eat('PLUS')
@@ -327,8 +396,11 @@ class Parser:
       self.eat('MINUS')
       node = UnaryOp(token, self.factor())
       return node
-    elif token._type == 'INTEGER':
-      self.eat('INTEGER')
+    elif token._type == 'INTEGER_CONST':
+      self.eat('INTEGER_CONSTEGER')
+      return Num(token)
+    elif token._type == 'FLOAT_CONST':
+      self.eat('FLOAT_CONST')
       return Num(token)
     elif token._type == 'LPAREN':
       self.eat('LPAREN')
@@ -340,14 +412,16 @@ class Parser:
       return node
   
   def term(self):
-    # handles term part of grammar term: factor( (MUL | DIV ) factor)
+    # term: factor((MUL | INTEGER_DIV | FLOAT_DIV) factor)*
     node = self.factor()
-    while self.current_token._type in ('MUL', 'DIV'):
+    while self.current_token._type in ('MUL', 'INTEGER_DIV', 'FLOAT_DIV'):
       token = self.current_token
       if token._type == 'MUL':
         self.eat('MUL')
-      elif token._type == 'DIV':
-        self.eat('DIV')
+      elif token._type == 'INTEGER_DIV':
+        self.eat('INTEGER_DIV')
+      elif toekn._type == 'FLOAT_DIV' :
+        self.eat('FLOAT_DIV')
     
       node = BinOp(left=node, op=token, right=self.factor())
     return node
