@@ -39,7 +39,33 @@ RESERVED_KEYWORDS = {
   'REAL': Token('REAL', 'REAL'),
 }
 
+class Symbol(object):
+  def __init__(self, name, type=None):
+    self.name = name
+    self.type = type
+
+class BuiltinTypeSymbol(Symbol):
+  def __init__(self, name):
+    super().__init__(name)
+  
+  def __str__(self):
+    return self.name
+  
+  def __repr__(self):
+    return self.__str__()
+
+class VarSymbol(Symbol):
+  def __init__(self, name, type):
+    super().__init__(name, type)
+  
+  def __str__(self):
+    return f'<{self.name} : {self.type}>'
+  
+  def __repr__(self):
+    return self.__str__()
+
 class Lexer:
+  # Breaks sentences into tokens
   def __init__(self, text):
     self.text = text
     self.pos = 0 # index into self.text
@@ -262,6 +288,7 @@ class NoOp(AST):
   pass
 
 class Parser:
+  # Recognizes structure in a stream of token
   def __init__(self, lexer):
     self.lexer = lexer
     self.current_token = self.lexer.get_next_token()
@@ -455,6 +482,7 @@ class NodeVisitor:
     raise Exception(f"No visit_{type(node).__name__}")
 
 class Interpreter(NodeVisitor):
+
   GLOBAL_SCOPE = {}
   def __init__(self, parser):
     self.parser = parser
