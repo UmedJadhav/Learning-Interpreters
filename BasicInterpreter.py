@@ -555,14 +555,14 @@ class SymbolTableBuilder(NodeVisitor):
     var_name = node.value
     var_symbol = self.symtab.lookup(var_name)
 
-    if var_symvol is None:
+    if var_symbol is None:
       raise NameError(repr(var_name))
 
 class Interpreter(NodeVisitor):
 
-  GLOBAL_SCOPE = {}
-  def __init__(self, parser):
-    self.parser = parser
+  def __init__(self, tree):
+    self.tree = tree
+    self.GLOBAL_SCOPE = {}
   
   def visit_Program(self, node):
     self.visit(node.block)
@@ -621,7 +621,9 @@ class Interpreter(NodeVisitor):
     return node.value
 
   def interpret(self):
-    tree = self.parser.parse()
+    tree = self.tree
+    if tree is None:
+      return ''
     return self.visit(tree)
 
 if __name__ == "__main__":
@@ -636,6 +638,17 @@ if __name__ == "__main__":
     text = open(sys.argv[1], 'r').read()
     lexer = Lexer(text)
     parser=Parser(lexer)
-    interpreter = Interpreter(parser)
+    tree = parser.parse()
+    symtab_builder = SymbolTableBuilder()
+    symtab_builder.visit(tree)
+    print('')
+    print('Symbol Table contents:')
+    print(symtab_builder.symtab)
+
+    interpreter = Interpreter(tree)
     result = interpreter.interpret()
-    print(interpreter.GLOBAL_SCOPE)
+
+    print('')
+    print('Run-time Global_Memory contents:')
+    for k, v in sorted(interpreter.GLOBAL_SCOPE.items()):
+        print('{} = {}'.format(k, v))

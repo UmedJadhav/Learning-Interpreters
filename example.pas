@@ -1,10 +1,12 @@
-PROGRAM Part10AST;
+PROGRAM Example;
 VAR
-   a, b : INTEGER;
-   y    : REAL;
+   number : INTEGER;
+   a, b   : INTEGER;
+   y      : REAL;
 
-BEGIN {Part10AST}
-   a := 2;
-   b := 10 * a + 10 * a DIV 4;
-   y := 20 / 7 + 3.14;
-END.  {Part10AST}
+BEGIN {Example}
+   number := 2;
+   a := number ;
+   b := 10 * a + 10 * number DIV 4;
+   y := 20 / 7 + 3.14
+END.  {Example}
