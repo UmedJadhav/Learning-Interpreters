@@ -19,14 +19,62 @@ class ASTVisualizer(NodeVisitor):
         self.dot_body = []
         self.dot_footer = ['}']
 
+    def visit_Program(self, node):
+        s = f'  node{self.ncount} [label="Program"]\n'
+        self.dot_body.append(s)
+        node._num = self.ncount
+        self.ncount += 1
+
+        self.visit(node.block)
+
+        s = f'  node{node._num} -> node{node.block._num}\n'
+        self.dot_body.append(s)
+
+    def visit_Block(self, node):
+        s = f'  node{self.ncount} [label="Block"]\n'
+        self.dot_body.append(s)
+        node._num = self.ncount
+        self.ncount += 1
+
+        for declaration in node.declarations:
+            self.visit(declaration)
+        self.visit(node.compound_statement)
+
+        for decl_node in node.declarations:
+            s = f'  node{node._num} -> node{decl_node._num}\n'
+            self.dot_body.append(s)
+
+        s = f'  node{node._num} -> node{node.compound_statement._num}\n'
+        self.dot_body.append(s)
+
+    def visit_VarDecl(self, node):
+        s = f'  node{self.ncount} [label="VarDecl"]\n'
+        self.dot_body.append(s)
+        node._num = self.ncount
+        self.ncount += 1
+
+        self.visit(node.var_node)
+        s = f'  node{node._num} -> node{node.var_node._num}\n'
+        self.dot_body.append(s)
+
+        self.visit(node.type_node)
+        s = f'  node{node._num} -> node{node.type_node._num}\n'
+        self.dot_body.append(s)
+
+    def visit_Type(self, node):
+        s = f'  node{self.ncount} [label="{node.token.value}"]\n'
+        self.dot_body.append(s)
+        node._num = self.ncount
+        self.ncount += 1
+
     def visit_Num(self, node):
-        s = '  node{} [label="{}"]\n'.format(self.ncount, node.token.value)
+        s = f'  node{self.ncount} [label="{node.token.value}"]\n'
         self.dot_body.append(s)
         node._num = self.ncount
         self.ncount += 1
 
     def visit_BinOp(self, node):
-        s = '  node{} [label="{}"]\n'.format(self.ncount, node.op.value)
+        s = f'  node{self.ncount} [label="{node.op.value}"]\n'
         self.dot_body.append(s)
         node._num = self.ncount
         self.ncount += 1
@@ -35,8 +83,54 @@ class ASTVisualizer(NodeVisitor):
         self.visit(node.right)
 
         for child_node in (node.left, node.right):
-            s = '  node{} -> node{}\n'.format(node._num, child_node._num)
+            s = f'  node{node._num} -> node{child_node._num}\n'
             self.dot_body.append(s)
+
+    def visit_UnaryOp(self, node):
+        s = f'  node{self.ncount} [label="unary {node.op.value}"]\n'
+        self.dot_body.append(s)
+        node._num = self.ncount
+        self.ncount += 1
+
+        self.visit(node.expr)
+        s = f'  node{node._num} -> node{ node.expr._num}\n'
+        self.dot_body.append(s)
+
+    def visit_Compound(self, node):
+        s = f'  node{self.ncount} [label="Compound"]\n'
+        self.dot_body.append(s)
+        node._num = self.ncount
+        self.ncount += 1
+
+        for child in node.children:
+            self.visit(child)
+            s = f'  node{node._num} -> node{child._num}\n'
+            self.dot_body.append(s)
+
+    def visit_Assign(self, node):
+        s = f'  node{self.ncount} [label="{ node.op.value}"]\n'
+        self.dot_body.append(s)
+        node._num = self.ncount
+        self.ncount += 1
+
+        self.visit(node.left)
+        self.visit(node.right)
+
+        for child_node in (node.left, node.right):
+            s = f'  node{node._num} -> node{child_node._num}\n'
+            self.dot_body.append(s)
+
+    def visit_Var(self, node):
+        s = f'  node{self.ncount} [label="{ node.value}"]\n'
+        self.dot_body.append(s)
+        node._num = self.ncount
+        self.ncount += 1
+
+    def visit_NoOp(self, node):
+        s = f'  node{self.ncount} [label="NoOp"]\n'
+        self.dot_body.append(s)
+        node._num = self.ncount
+        self.ncount += 1
 
     def gendot(self):
         tree = self.parser.parse()
