@@ -17,15 +17,6 @@
   variable : ID
 '''
 
-RESERVED_KEYWORDS = {
-  'BEGIN' : Token('BEGIN','BEGIN'),
-  'END': Token('END','END'),
-  'PROGRAM': Token('PROGRAM', 'PROGRAM'),
-  'VAR' : Token('VAR', 'VAR')
-  'DIV': Token('INTEGER_DIV', 'DIV')
-  'INTEGER': Token('INTEGER', 'INTEGER'),
-  'REAL': Token('REAL', 'REAL'),
-}
 
 class Token:
   def __init__(self, _type, value):
@@ -38,6 +29,15 @@ class Token:
   def __repr__(self):
     return self.__str__()
 
+RESERVED_KEYWORDS = {
+  'BEGIN' : Token('BEGIN','BEGIN'),
+  'END': Token('END','END'),
+  'PROGRAM': Token('PROGRAM', 'PROGRAM'),
+  'VAR' : Token('VAR', 'VAR'),
+  'DIV': Token('INTEGER_DIV', 'DIV'),
+  'INTEGER': Token('INTEGER', 'INTEGER'),
+  'REAL': Token('REAL', 'REAL'),
+}
 
 class Lexer:
   def __init__(self, text):
@@ -59,7 +59,7 @@ class Lexer:
     return token
   
   def skip_comment(self):
-    while self.currrent_char != '}':
+    while self.current_char != '}':
       self.advance()
     self.advance() # To eat up the closing brace
   
@@ -74,9 +74,10 @@ class Lexer:
       result += self.current_char
       self.advance()
 
-      while (self.current_char is not None and self.current_char.isdigit())
+      while (self.current_char is not None and self.current_char.isdigit()):
         result += self.current_char
         self.advance()
+      
       token = Token('REAL_CONST', float(result))
     else:
       token = Token('INTEGER_CONST', int(result))
@@ -118,9 +119,6 @@ class Lexer:
         self.skip_whitespace()
         continue
 
-      if self.current_char.isdigit():
-        return Token('INTEGER',self.integer())
-
       if self.current_char ==  '+':
         self.advance()
         return  Token('PLUS','+')
@@ -135,7 +133,7 @@ class Lexer:
 
       if self.current_char == '/':
         self.advance()
-        return Token('DIV','/')    
+        return Token('FLOAT_DIV','/')    
     
       if self.current_char == '(' :
         self.advance()
@@ -166,7 +164,7 @@ class Lexer:
         self.skip_comment()
         continue
       
-      if self.current_char.is_digit():
+      if self.current_char.isdigit():
         return self.number()
       
       if self.current_char == ':':
@@ -193,7 +191,7 @@ class Program(AST):
     self.name = name
     self.block = block
 
-class Block(AST:
+class Block(AST):
   def __init__(self, declarations , compound_statement):
     self.declarations = declarations
     self.compound_statement = compound_statement
@@ -206,7 +204,7 @@ class VarDecl(AST):
 class Type(AST):
   def __init__(self, token):
     self.token = token
-    self.value = self.token.value
+    self.value = token.value
 
 class BinOp(AST):
   # Binary operators operate on 2 operands
@@ -310,7 +308,8 @@ class Parser:
     # variable_declaration: ID(COMMA ID)* COLON type_spec
     var_nodes = [Var(self.current_token)]
     self.eat('ID')
-    while self.current_token__type == 'COMMA':
+
+    while self.current_token._type == 'COMMA':
       self.eat('COMMA')
       var_nodes.append(Var(self.current_token))
       self.eat('ID')
@@ -339,7 +338,6 @@ class Parser:
     root = Compound()
     for node in nodes:
       root.children.append(node)
-    
     return root
   
   def statement_list(self):
@@ -350,10 +348,7 @@ class Parser:
     while self.current_token._type == 'SEMI':
       self.eat('SEMI')
       results.append(self.statement())
-    
-    if self.current_token._type == 'ID':
-      self.error()
-    
+
     return results
 
   def statement(self):
@@ -397,10 +392,10 @@ class Parser:
       node = UnaryOp(token, self.factor())
       return node
     elif token._type == 'INTEGER_CONST':
-      self.eat('INTEGER_CONSTEGER')
+      self.eat('INTEGER_CONST')
       return Num(token)
-    elif token._type == 'FLOAT_CONST':
-      self.eat('FLOAT_CONST')
+    elif token._type == 'REAL_CONST':
+      self.eat('REAL_CONST')
       return Num(token)
     elif token._type == 'LPAREN':
       self.eat('LPAREN')
@@ -420,19 +415,13 @@ class Parser:
         self.eat('MUL')
       elif token._type == 'INTEGER_DIV':
         self.eat('INTEGER_DIV')
-      elif toekn._type == 'FLOAT_DIV' :
+      elif token._type == 'FLOAT_DIV' :
         self.eat('FLOAT_DIV')
     
       node = BinOp(left=node, op=token, right=self.factor())
     return node
 
   def expr(self):
-    # Arithmetic expression parser + interpreter
-    # Current grammar supported by the parser
-    # expr : term((PLUS | MINUS )term )*  * -> any number of arguments 
-    # term : factor ((MUL | DIV ) factor)*
-    # factor : INTEGER | LPAREN expr RPAREN
-
     # each BinOp node adopts the current value of the node variable as its
     # left child and the result of a call to a term or factor as its right child, 
     # so it’s effectively pushing down nodes to the left
@@ -479,6 +468,7 @@ class Interpreter(NodeVisitor):
       return self.visit(node.left) * self.visit(node.right)
     elif node.op._type == 'DIV':
       return self.visit(node.left) / self.visit(node.right)
+
   
   def visit_UnaryOp(self, node):
     op = node.op._type

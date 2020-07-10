@@ -49,11 +49,12 @@ def main():
         description='Generate an AST DOT file.'
     )
     argparser.add_argument(
-        'text',
-        help='Arithmetic expression (in quotes): "1 + 2 * 3"'
+        'fname',
+        help='Pascal source file"'
     )
     args = argparser.parse_args()
-    text = args.text
+    fname = args.fname
+    text = open(fname, 'r').read()
 
     lexer = Lexer(text)
     parser = Parser(lexer)
