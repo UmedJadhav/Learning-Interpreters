@@ -70,8 +70,8 @@ class SymbolTable:
     self.__init_buildins()
   
   def __init_buildins(self):
-    self.define(BuildinTypeSymbol('INTEGER'))
-    self.define(BuildinTypeSymbol('REAL'))
+    self.define(BuiltinTypeSymbol('INTEGER'))
+    self.define(BuiltinTypeSymbol('REAL'))
   
   def __str__(self):
     s = f'Symbols: {[value for value in self._symbols.values()]}'
