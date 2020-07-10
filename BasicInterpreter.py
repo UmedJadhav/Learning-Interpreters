@@ -64,6 +64,26 @@ class VarSymbol(Symbol):
   def __repr__(self):
     return self.__str__()
 
+class SymbolTable:
+  def __init__(self):
+    self._symbols = {}
+  
+  def __str__(self):
+    s = f'Symbols: {[value for value in self._symbols.values()]}'
+    return s
+
+  def __repr__(self):
+    return self.__str__()
+  
+  def define(self, symbol):
+    print(f'Define: {symbol}')
+    self._symbols[symbol.name] = symbol
+  
+  def lookup(self, name):
+    print(f'Lookup: {name}')
+    symbol = self._symbols.get(name)
+    return symbol
+
 class Lexer:
   # Breaks sentences into tokens
   def __init__(self, text):
