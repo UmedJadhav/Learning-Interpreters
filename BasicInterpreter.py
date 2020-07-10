@@ -466,10 +466,25 @@ class Interpreter(NodeVisitor):
       return self.visit(node.left) - self.visit(node.right)
     elif node.op._type == 'MUL':
       return self.visit(node.left) * self.visit(node.right)
-    elif node.op._type == 'DIV':
+    elif node.op._type == 'INTEGER_DIV':
       return self.visit(node.left) / self.visit(node.right)
-
+    elif node.op._type == 'FLOAT_DIV:
+      return float(self.visit(node.left)) / float(self.visit(node.right))
   
+  def visit_Program(self, node):
+    self.visit(node.block)
+  
+  def visit_Block(self, node):
+    for declaration in node.declarations:
+      self.visit(declaration)
+    self.visit(node.compound_statement)
+  
+  def visit_VarDecl(self, node):
+    pass
+
+  def visit_Type(self, node):
+    pass
+
   def visit_UnaryOp(self, node):
     op = node.op._type
     if op == 'PLUS':
