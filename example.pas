@@ -1,12 +1,23 @@
 PROGRAM Example;
 VAR
-   number : INTEGER;
-   a, b   : INTEGER;
-   y      : REAL;
+   a : INTEGER;
+
+PROCEDURE P1;
+VAR
+   a : REAL;
+   k : INTEGER;
+
+   PROCEDURE P2;
+   VAR
+      a, z : INTEGER;
+   BEGIN {P2}
+      z := 777;
+   END;  {P2}
+
+BEGIN {P1}
+
+END;  {P1}
 
 BEGIN {Example}
-   number := 2;
-   a := number ;
-   b := 10 * a + 10 * number DIV 4;
-   y := 20 / 7 + 3.14
+   a := 10;
 END.  {Example}

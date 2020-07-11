@@ -3,7 +3,7 @@
   ---------------------
   program : PROGRAM variable SEMI block DOT
   block: declaration compund_statements
-  declarations: VAR(variable_decalration SEMI)+ | empty
+  declarations: VAR(variable_decalration SEMI)+ | (PROCEDURE ID SEMI block SEMI)* | empty
   variable_declaration: ID(COMMA ID)* COLON type_spec
   type_spec : INTEGER |  REAL
   compound_statement : BEGIN statement_list END
@@ -37,6 +37,7 @@ RESERVED_KEYWORDS = {
   'DIV': Token('INTEGER_DIV', 'DIV'),
   'INTEGER': Token('INTEGER', 'INTEGER'),
   'REAL': Token('REAL', 'REAL'),
+  'PROCEDURE' : Token('PROCEDURE', 'PROCEDURE')
 }
 
 class Symbol(object):
@@ -312,6 +313,11 @@ class NoOp(AST):
   # Used to represent empty statement
   pass
 
+class ProcedureDecl(AST):
+  def __init__(self, proc_name, block_node):
+    self.proc_name = proc_name
+    self.block_node = block_node
+
 class Parser:
   # Recognizes structure in a stream of token
   def __init__(self, lexer):
@@ -346,7 +352,7 @@ class Parser:
     return node
   
   def declarations(self):
-    # declarations: VAR(variable_decalration SEMI)+ | empty
+    # declarations: VAR(variable_decalration SEMI)+ | (PROCEDURE ID SEMI block SEMI)* | empty
     declarations = []
     if self.current_token._type == 'VAR':
       self.eat('VAR')
@@ -354,6 +360,17 @@ class Parser:
         var_decl = self.variable_declaration()
         declarations.extend(var_decl)
         self.eat('SEMI')
+    
+    while self.current_token._type == 'PROCEDURE':
+      self.eat('PROCEDURE')
+      proc_name = self.current_token.value
+      self.eat('ID')
+      self.eat('SEMI')
+      block_node = self.block()
+      proc_decl = ProcedureDecl(proc_name, block_node)
+      declarations.append(proc_decl)
+      self.eat('SEMI')
+
     return declarations
   
   def variable_declaration(self):
@@ -517,6 +534,9 @@ class SymbolTableBuilder(NodeVisitor):
     for declaration in node.declarations:
       self.visit(declaration)
     self.visit(node.compound_statement)
+  
+  def visit_ProcedureDecl(self, node):
+    pass
 
   def visit_BinOp(self, node):
     self.visit(node.left)
@@ -576,6 +596,9 @@ class Interpreter(NodeVisitor):
     pass
 
   def visit_Type(self, node):
+    pass
+  
+  def visit_ProcedureDecl(self, node):
     pass
 
   def visit_BinOp(self, node):
