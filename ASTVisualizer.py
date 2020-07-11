@@ -61,11 +61,22 @@ class ASTVisualizer(NodeVisitor):
         s = f'  node{node._num} -> node{node.type_node._num}\n'
         self.dot_body.append(s)
 
+    def visit_ProcedureDecl(self, node):
+        s = f' node{self.ncount} [label="ProcDecl:{node.proc_name}"]'
+        self.dot_body.append(s)
+        node._num = self.ncount
+        self.ncount += 1
+
+        self.visit(node.block_node)
+        s = f' node{node._num} -> node{node.block_node._num}\n'
+        self.dot_body.append(s)
+
     def visit_Type(self, node):
         s = f'  node{self.ncount} [label="{node.token.value}"]\n'
         self.dot_body.append(s)
         node._num = self.ncount
         self.ncount += 1
+
 
     def visit_Num(self, node):
         s = f'  node{self.ncount} [label="{node.token.value}"]\n'
